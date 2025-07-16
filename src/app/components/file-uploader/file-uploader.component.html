@@ -1,0 +1,267 @@
+<div class="file-upload">
+  <h3>Upload a File</h3>
+  
+  <!-- File Input Section -->
+  <div class="file-input-container">
+    <input 
+      id="csvFileInput"
+      type="file" 
+      accept=".csv,.txt,.xml" 
+      class="form-control"
+      (change)="onFileSelect($event)"
+      [disabled]="isProcessing">
+
+    
+  <!-- Options section - shown when file is selected -->
+  <div *ngIf="selectedFile" class="options-section">
+    <!-- Header checkbox -->
+    <div class="option-item">
+      <label class="option-label">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="hasHeader" 
+          (change)="onHeaderCheckboxChange()" 
+          [disabled]="isProcessing"
+          class="option-checkbox">  
+        File has a header line
+      </label>
+    </div>
+
+     
+    <!-- Skip empty lines checkbox -->
+    <div class="option-item">
+      <label class="option-label">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="skipEmptyLines" 
+          (change)="onSkipEmptyLinesChange()" 
+          [disabled]="isProcessing"
+          class="option-checkbox"> 
+        Skip empty lines
+      </label>
+    </div>
+
+    <!-- TXT-specific options - only show for TXT files -->
+    <div *ngIf="fileType === 'txt'" class="txt-options">
+      <!-- Field Count -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Field Count:</span>
+          <input 
+            type="number" 
+            [(ngModel)]="fieldCount" 
+            (input)="onFieldCountChange()" 
+            [disabled]="isProcessing"
+            class="number-input"
+            min="1"
+            max="50">
+        </label>
+      </div>
+
+      <!-- Field Selection -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Field Select:</span>
+          <select 
+            [(ngModel)]="selectedFieldIndex" 
+            [disabled]="isProcessing"
+            class="delimiter-select">
+            <option *ngFor="let field of fieldConfigs; let i = index" [value]="i">
+              Field {{ i + 1 }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Field Configuration -->
+      <div class="field-settings" *ngIf="fieldConfigs[selectedFieldIndex]">
+        <h4>Field {{ (+selectedFieldIndex) + 1 }} Settings</h4>
+        
+        <div class="field-config-row">
+          <div class="field-config-item">
+            <label class="option-label">
+              <span class="option-text">Start Position:</span>
+              <input 
+                type="number" 
+                [(ngModel)]="fieldConfigs[selectedFieldIndex].start" 
+                (input)="onFieldConfigChange()" 
+                [disabled]="isProcessing"
+                class="number-input"
+                min="0">
+            </label>
+          </div>
+          
+          <div class="field-config-item">
+            <label class="option-label">
+              <span class="option-text">Character Length:</span>
+              <input 
+                type="number" 
+                [(ngModel)]="fieldConfigs[selectedFieldIndex].length" 
+                (input)="onFieldConfigChange()" 
+                [disabled]="isProcessing"
+                class="number-input"
+                min="1">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSV-specific options - only show for CSV files -->
+    <div *ngIf="fileType === 'csv'">
+      <!-- Value Delimiter selection dropdown -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Value Delimiter:</span>
+          <select 
+            [(ngModel)]="selectedDelimiter" 
+            (change)="onDelimiterChange()" 
+            [disabled]="isProcessing"
+            class="delimiter-select">
+            <option *ngFor="let option of delimiterOptions" [value]="option.value">
+              {{option.label}}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Row Delimiter selection dropdown -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Row Delimiter:</span>
+          <select 
+            [(ngModel)]="selectedRowDelimiter" 
+            (change)="onRowDelimiterChange()" 
+            [disabled]="isProcessing"
+            class="delimiter-select">
+            <option *ngFor="let option of rowDelimiterOptions" [value]="option.value">
+              {{option.label}}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Quote Handling selection dropdown -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Quote Handling:</span>
+          <select 
+            [(ngModel)]="selectedQuoteOption" 
+            (change)="onQuoteOptionChange()" 
+            [disabled]="isProcessing"
+            class="delimiter-select">
+            <option *ngFor="let option of quoteOptions" [value]="option.value">
+              {{option.label}}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Encoding selection dropdown -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">File Encoding:</span>
+          <select 
+            [(ngModel)]="selectedEncoding" 
+            (change)="onEncodingChange()" 
+            [disabled]="isProcessing"
+            class="delimiter-select">
+            <option *ngFor="let option of encodingOptions" [value]="option.value">
+              {{option.label}}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Row Prefix/Suffix inputs -->
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Row Prefix:</span>
+          <input 
+            type="text" 
+            [(ngModel)]="rowPrefix" 
+            (input)="onRowPrefixChange()" 
+            [disabled]="isProcessing"
+            class="prefix-suffix-input">
+        </label>
+      </div>
+      
+      <div class="option-item">
+        <label class="option-label">
+          <span class="option-text">Row Suffix:</span>
+          <input 
+            type="text" 
+            [(ngModel)]="rowSuffix" 
+            (input)="onRowSuffixChange()" 
+            [disabled]="isProcessing"
+            class="prefix-suffix-input">
+        </label>
+      </div>
+    </div>
+
+    <!-- Trim whitespace checkbox - show for both file types -->
+    <div class="option-item">
+      <label class="option-label">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="trimWhitespace" 
+          (change)="onTrimWhitespaceChange()" 
+          [disabled]="isProcessing"
+          class="option-checkbox"> 
+        Trim whitespace from values
+      </label>
+    </div>
+
+    <!-- Double quote wrap checkbox -->
+    <div class="option-item" style="display: none;">
+      <label class="option-label">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="doubleQuoteWrap" 
+          (change)="onDoubleQuoteWrapChange()" 
+          [disabled]="isProcessing"
+          class="option-checkbox"> 
+        Double Quote Wrap
+      </label>
+    </div>
+
+    <!-- Process Data Button - At the very end of all options -->
+    <div *ngIf="selectedFile && !isProcessing" class="process-button-container">
+      <button 
+        class="btn btn-primary process-btn"
+        (click)="processData()"
+        title="Process the file with current settings">
+        Process Data
+      </button>
+    </div>
+  
+  
+    <!-- Cancel Button - shown when file is selected -->
+    <button 
+      *ngIf="selectedFile && !isProcessing" 
+      class="cancel-btn"
+      (click)="clearSelection()"
+      title="Remove selected file and clear data">
+      ✕
+    </button>
+  </div>
+
+
+  
+  <!-- File Status Display -->
+  <div class="file-status">
+    <p *ngIf="!selectedFile && !isProcessing" class="help-text">
+      Select a file to upload
+    </p>
+    
+    <p *ngIf="selectedFile && !isProcessing" class="selected-file">
+      Selected: <strong>{{selectedFile.name}}</strong> 
+      <span class="file-size">({{(selectedFile.size / 1024).toFixed(1)}} KB)</span>
+      <span class="file-type">- {{fileType?.toUpperCase()}} file</span>
+    </p>
+    
+    <p *ngIf="isProcessing" class="processing">
+      Processing <strong>{{selectedFile?.name}}</strong>...
+    </p>
+  </div>
+</div>

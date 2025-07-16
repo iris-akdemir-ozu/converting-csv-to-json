@@ -1,18 +1,18 @@
-import { Component, EventEmitter, Output } from "@angular/core";
-import { CsvConverterService, CsvOptions } from 'src/app/services/csv-converter.service';
+import { Component, EventEmitter, Inject, Output } from "@angular/core"
+import { CsvConverterService, CsvOptions } from "src/app/services/csv-converter.service"
+import { TxtToJsonService, TxtToJsonOptions } from "src/app/services/txt-to-json.service"
 
 @Component({
-  selector: "app-csv-uploader",
-  templateUrl: "./csv-uploader.component.html",
-  styleUrls: ["./csv-uploader.component.scss"],
+  selector: "app-file-uploader",
+  templateUrl: "./file-uploader.component.html",
+  styleUrls: ["./file-uploader.component.scss"],
 })
-
-export class CsvUploaderComponent {
+export class FileUploaderComponent {
   // Output events to communicate with parent component
   @Output() onConvert = new EventEmitter<any>()
   @Output() onError = new EventEmitter<string>()
   @Output() onFileClear = new EventEmitter<void>()
-  @Output() onOptionsChange = new EventEmitter<CsvOptions>()
+  @Output() onOptionsChange = new EventEmitter<any>()
 
   // Track selected file and upload state
   selectedFile: File | null = null
@@ -27,8 +27,20 @@ export class CsvUploaderComponent {
   selectedEncoding = "utf-8"
   selectedQuoteOption = "none"
   trimWhitespace = true
+  fileType: "csv" | "txt" | null = null
 
-  constructor(private csvService: CsvConverterService) {}
+  fieldCount = 3
+  selectedFieldIndex = 0
+  fieldConfigs: Array<{ start: number; length: number }> = [
+    { start: 0, length: 10 },
+    { start: 10, length: 10 },
+    { start: 20, length: 10 },
+  ]
+
+  constructor(
+    private csvService: CsvConverterService,
+    @Inject(TxtToJsonService) private txtService: TxtToJsonService,
+  ) {}
 
   // Delimiter options for the dropdown
   delimiterOptions = [
@@ -44,8 +56,8 @@ export class CsvUploaderComponent {
   // Row delimiter options for the dropdown
   rowDelimiterOptions = [
     { value: "newline", label: "Newline (\\n)" },
-    { value: "carriage-return", label: "Carriage Return(\\r)"},
-    {value: "crlf", label: "Carriage Return + Newline (\\r\\n)"},
+    { value: "carriage-return", label: "Carriage Return(\\r)" },
+    { value: "crlf", label: "Carriage Return + Newline (\\r\\n)" },
     { value: ",", label: "Comma (,)" },
     { value: ";", label: "Semicolon (;)" },
     { value: "|", label: "Pipe (|)" },
@@ -95,21 +107,47 @@ export class CsvUploaderComponent {
    */
   async onFileSelect(event: any): Promise<void> {
     const files = event.target.files
-    // const fileTypes = ["csv"] // Only accept CSV files
 
     if (files && files.length > 0) {
       const file = files[0]
       this.selectedFile = file
+
+      // Detect file type
+      const extension = this.getFileExtension(file.name)
+      if (extension === "csv") {
+        this.fileType = "csv"
+      } else if (extension === "txt") {
+        this.fileType = "txt"
+      } else {
+        this.onError.emit("Unsupported file type. Please upload a .csv or .txt file.")
+        this.clearSelection()
+        return
+      }
+
       this.isProcessing = true
       try {
-        const jsonResult = await this.csvService.convertFileToJson(file, this.getOptions());
-        this.isProcessing = false;
-        this.onConvert.emit(jsonResult);
-        this.onOptionsChange.emit(this.getOptions());
+        let jsonResult: any
+
+        if (this.fileType === "csv") {
+          jsonResult = await this.csvService.convertFileToJson(file, this.getOptions())
+        } else if (this.fileType === "txt") {
+          // For TXT files, read as text and use the TXT service
+          const text = await file.text()
+          const txtOptions: TxtToJsonOptions = this.getTxtOptions()
+          const result = this.txtService.convert(text, txtOptions)
+          jsonResult = {
+            properties: Object.keys(result[0] || {}),
+            result: result,
+          }
+        }
+
+        this.isProcessing = false
+        this.onConvert.emit(jsonResult)
+        this.onOptionsChange.emit(this.getOptions())
       } catch (error) {
-        this.isProcessing = false;
-        this.onError.emit("Error reading file: " + error);
-        this.clearSelection();
+        this.isProcessing = false
+        this.onError.emit("Error reading file: " + error)
+        this.clearSelection()
       }
     }
   }
@@ -126,7 +164,17 @@ export class CsvUploaderComponent {
       selectedEncoding: this.selectedEncoding,
       selectedQuoteOption: this.selectedQuoteOption,
       trimWhitespace: this.trimWhitespace,
-    };
+    }
+  }
+
+  getTxtOptions(): TxtToJsonOptions {
+    return {
+      fieldCount: this.fieldCount,
+      startPositions: this.fieldConfigs.map((config) => config.start),
+      lengths: this.fieldConfigs.map((config) => config.length),
+      hasHeader: this.hasHeader,
+      skipEmptyLines: this.skipEmptyLines,
+    }
   }
 
   /**
@@ -134,6 +182,7 @@ export class CsvUploaderComponent {
    */
   clearSelection(): void {
     this.selectedFile = null
+    this.fileType = null
     this.isProcessing = false
 
     // Reset the file input
@@ -164,55 +213,33 @@ export class CsvUploaderComponent {
     }
     this.onOptionsChange.emit(options)
   }
-  private parseCSVLine(line: string): string[] {
-    console.log("Parsing line:", line, "with doubleQuoteWrap:", this.doubleQuoteWrap) // Debug log
-
-    if (!this.isQuoteHandlingEnabled) {
-      // Simple split - preserve ALL characters including quotes
-      const result = line.split(this.selectedDelimiter)
-      return result
+  // TXT-specific methods
+  setFieldCount(count: number): void {
+    this.fieldCount = count
+    // Adjust fieldConfigs array to match the new count
+    while (this.fieldConfigs.length < count) {
+      const lastConfig = this.fieldConfigs[this.fieldConfigs.length - 1]
+      const newStart = lastConfig ? lastConfig.start + lastConfig.length : 0
+      this.fieldConfigs.push({ start: newStart, length: 10 })
     }
-
-    // Complex parsing for quote handling
-    const result: string[] = []
-    let current = ""
-    let inQuotes = false
-    let i = 0
-    const quoteChar = this.quoteCharacter
-
-    while (i < line.length) {
-      const char = line[i]
-      const nextChar = line[i + 1]
-
-      if (char === quoteChar && !inQuotes) {
-        // Start of quoted section - don't include the opening quote
-        inQuotes = true
-      } else if (char === quoteChar && inQuotes) {
-        if (nextChar === quoteChar) {
-          // Escaped quote (double quote) - include one quote in the result
-          current += quoteChar
-          i++ // Skip next quote
-        } else {
-          // End of quoted section - don't include the closing quote
-          inQuotes = false
-        }
-      } else if (char === this.selectedDelimiter && !inQuotes) {
-        // Delimiter outside quotes - end of field
-        result.push(current)
-        current = ""
-      } else {
-        // Regular character
-        current += char
-      }
-      i++
+    while (this.fieldConfigs.length > count) {
+      this.fieldConfigs.pop()
     }
-
-    // Add the last field
-    result.push(current)
-    return result
+    // Reset selected field index if it's out of bounds
+    if (this.selectedFieldIndex >= count) {
+      this.selectedFieldIndex = count - 1
+    }
   }
 
-  
+  onFieldCountChange(): void {
+    this.setFieldCount(this.fieldCount)
+  }
+
+  onFieldConfigChange(): void {
+    // This method can be called when field configurations change
+    // You can add any additional logic here if needed
+  }
+
   onHeaderCheckboxChange(): void {
     this.emitOptions()
   }
@@ -262,14 +289,27 @@ export class CsvUploaderComponent {
     }
 
     if (this.isProcessing) {
-      return 
+      return
     }
 
     this.isProcessing = true
     console.log("Processing data with options:", this.getOptions())
 
     try {
-      const jsonResult = await this.csvService.convertFileToJson(this.selectedFile, this.getOptions())
+      let jsonResult: any
+
+      if (this.fileType === "csv") {
+        jsonResult = await this.csvService.convertFileToJson(this.selectedFile, this.getOptions())
+      } else if (this.fileType === "txt") {
+        const text = await this.selectedFile.text()
+        const txtOptions: TxtToJsonOptions = this.getTxtOptions()
+        const result = this.txtService.convert(text, txtOptions)
+        jsonResult = {
+          properties: Object.keys(result[0] || {}),
+          result: result,
+        }
+      }
+
       this.isProcessing = false
       console.log("Processing completed successfully:", jsonResult)
       this.onConvert.emit(jsonResult)
@@ -280,5 +320,8 @@ export class CsvUploaderComponent {
       this.onError.emit("Error processing file: " + error)
     }
   }
-  
+
+  private getFileExtension(filename: string): string {
+    return filename.split(".").pop()?.toLowerCase() || ""
+  }
 }

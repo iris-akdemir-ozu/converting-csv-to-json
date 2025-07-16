@@ -2,7 +2,7 @@
     <!-- Header -->
     <header class="dashboard-header">
       <div class="header-content">
-        <h1>CSV Manager Dashboard</h1>
+        <h1>File Manager Dashboard</h1>
         <div class="user-info">
           <span *ngIf="currentUser">Welcome, {{ currentUser.username }}!</span>
           <button class="btn btn-outline" (click)="logout()">Logout</button>
@@ -14,18 +14,18 @@
     <main class="dashboard-main">
       <div class="container">
         <div class="welcome-card">
-          <h2>Welcome to Your CSV Manager</h2>
-          <p>Upload, process, and manage your CSV files with ease.</p>
+          <h2>Welcome to Your File Manager</h2>
+          <p>Upload, process, and manage your files with ease.</p>
         </div>
   
         <!-- Your existing CSV uploader component -->
         <div class="card">
-          <app-csv-uploader 
+          <app-file-uploader 
             (onConvert)="onCsvConverted($event)"
             (onError)="onConversionError($event)"
             (onFileClear)="onFileClear()"
             (onOptionsChange)="onOptionsChanged($event)">
-          </app-csv-uploader>
+          </app-file-uploader>
           
           <!-- Send to Backend Button -->
           <div *ngIf="jsonData.length > 0" style="margin-top: 20px;">

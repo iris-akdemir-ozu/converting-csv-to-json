@@ -11,12 +11,12 @@ app.use(cors({
 }));
 const jwt = require('jsonwebtoken');
 
+
 const port = 3000
 const JWT_SECRET = 'ca48f8c2c87e820934e5f3ed6f0961edab703b9a0b4c80af448fa83b7745955f'; // Change this to a secure secret
 const MONGODB_URI = 'mongodb://localhost:27017/csvmanager'; // Adjust as needed
-
 app.use(express.json())
-
+app.use(express.json({limit: '100mb', extended: true}))
 const mongoUrl = "mongodb://localhost:27017"
 const dbName = "csv_database" 
 const collectionName = "csv_data" 

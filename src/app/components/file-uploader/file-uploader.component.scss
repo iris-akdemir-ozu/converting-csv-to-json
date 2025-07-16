@@ -4,9 +4,8 @@ h3 {
 }
 
 p {
-  margin-top: 10px;
+  margin-bottom: 20px;
   color: #666;
-  font-size: 14px;
 }
 
 .file-input-container {
@@ -137,6 +136,61 @@ p {
   }
 }
 
+// TXT-specific styles
+.txt-options {
+  border-top: 2px solid #007bff;
+  padding-top: 15px;
+  margin-top: 15px;
+}
+
+.field-settings {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #e3f2fd;
+  border-radius: 6px;
+  border: 1px solid #bbdefb;
+  
+  h4 {
+    margin: 0 0 15px 0;
+    color: #1976d2;
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+.field-config-row {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.field-config-item {
+  flex: 1;
+  min-width: 200px;
+}
+
+.number-input {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  transition: border-color 0.3s ease;
+  min-width: 80px;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+  }
+  
+  &:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
 // Prefix/Suffix section styles - now always visible
 .prefix-suffix-section {
   margin: 20px 0;
@@ -247,6 +301,13 @@ p {
     font-weight: normal;
     font-size: 12px;
   }
+  
+  .file-type {
+    color: #007bff;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
 }
 
 .processing {
@@ -336,7 +397,7 @@ p {
     gap: 4px;
   }
   
-  .delimiter-select, .prefix-suffix-input {
+  .delimiter-select, .prefix-suffix-input, .number-input {
     width: 100%;
     min-width: unset;
   }
@@ -351,5 +412,14 @@ p {
   
   .section-description {
     font-size: 12px;
+  }
+  
+  .field-config-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .field-config-item {
+    min-width: unset;
   }
 }

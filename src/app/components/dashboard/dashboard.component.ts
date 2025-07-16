@@ -95,23 +95,31 @@ export class DashboardComponent implements OnInit {
 
   sendToBackend(): void {
     if (this.jsonData.length === 0) {
-      alert("No data to send. Please upload a CSV file first.")
+      alert("No data to send. Please upload a file first.")
       return
     }
 
+    const batchSize = 50000;
+    const totalBatches = Math.ceil(this.jsonData.length / batchSize);
+
+
     console.log("Sending data to MongoDB:", this.jsonData)
 
-    this.databaseService.saveCsvData(this.jsonData).subscribe({
-      next: (response) => {
-        console.log("Data saved successfully:", response)
-        alert(
-          `Success! Saved ${response.insertedIds ? Object.keys(response.insertedIds).length : "unknown"} records to MongoDB`,
-        )
-      },
-      error: (error) => {
-        console.error("Error saving data:", error)
-        alert("Error saving data to database: " + error.message)
-      },
-    })
+    for (let i = 0; i < totalBatches; i++) {
+      const batch = this.jsonData.slice(i * batchSize, (i + 1) * batchSize);
+      this.databaseService.saveCsvData(batch).subscribe({
+        next: (response) => {
+          console.log("Data saved successfully:", response)
+          alert(
+            `Success! Saved ${response.insertedIds ? Object.keys(response.insertedIds).length : "unknown"} records to MongoDB`,
+          )
+        },
+        error: (error) => {
+          console.error("Error saving data:", error)
+          alert("Error saving data to database: " + error.message)
+        },
+      })
+    }
+    
   }
 }
