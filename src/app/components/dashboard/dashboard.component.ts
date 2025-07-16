@@ -89,37 +89,48 @@ export class DashboardComponent implements OnInit {
   }
 
   onOptionsChanged(options: CsvOptions): void {
-    console.log("CSV options changed:", options)
+    console.log(" Options changed:", options)
     this.csvOptions = { ...options }
   }
 
   sendToBackend(): void {
-    if (this.jsonData.length === 0) {
-      alert("No data to send. Please upload a file first.")
-      return
+    if (!this.jsonData || this.jsonData.length === 0) {
+        alert("No data to send. Please upload a file first.");
+        return;
     }
 
     const batchSize = 50000;
     const totalBatches = Math.ceil(this.jsonData.length / batchSize);
+    console.log(`Starting to send ${this.jsonData.length} records in ${totalBatches} batches.`);
 
+    const sendBatch = (batchIndex: number): void => {
+        if (batchIndex >= totalBatches) {
+            alert(" All data sent successfully to MongoDB!");
+            return;
+        }
 
-    console.log("Sending data to MongoDB:", this.jsonData)
+        const start = batchIndex * batchSize;
+        const end = start + batchSize;
+        const batch = this.jsonData.slice(start, end);
 
-    for (let i = 0; i < totalBatches; i++) {
-      const batch = this.jsonData.slice(i * batchSize, (i + 1) * batchSize);
-      this.databaseService.saveCsvData(batch).subscribe({
-        next: (response) => {
-          console.log("Data saved successfully:", response)
-          alert(
-            `Success! Saved ${response.insertedIds ? Object.keys(response.insertedIds).length : "unknown"} records to MongoDB`,
-          )
-        },
-        error: (error) => {
-          console.error("Error saving data:", error)
-          alert("Error saving data to database: " + error.message)
-        },
-      })
-    }
-    
-  }
+        this.databaseService.saveCsvData(batch).subscribe({
+            next: (response) => {
+                const savedCount = response?.insertedIds
+                    ? Object.keys(response.insertedIds).length
+                    : batch.length;
+
+                console.log(`Batch ${batchIndex + 1}/${totalBatches} sent. Saved ${savedCount} records.`);
+                // Sonraki batch'e geç
+                sendBatch(batchIndex + 1);
+            },
+            error: (error) => {
+                console.error(`Error in batch ${batchIndex + 1}:`, error);
+                alert("Error saving data to database: " + error.message);
+            }
+        });
+    };
+
+    // İlk batch'i başlat
+    sendBatch(0);
+}
 }
