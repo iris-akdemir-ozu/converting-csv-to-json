@@ -3,29 +3,11 @@ import { AuthService, User } from "../../services/auth.service"
 import { DatabaseService } from "../../services/database.service"
 import {Router} from "@angular/router"
 import { TxtToJsonOptions } from "src/app/services/txt-to-json.service"
-// Interface to define the structure of our data
+import { CsvOptions } from "src/app/services/csv-converter.service"
+
+
 interface TableData {
   [key: string]: any
-}
-
-// Interface for CSV parsing options
-interface CsvOptions {
-  hasHeader: boolean
-  skipEmptyLines: boolean
-  selectedDelimiter: string
-  doubleQuoteWrap: boolean
-  selectedRowDelimiter: string
-  rowPrefix: string
-  rowSuffix: string
-  selectedEncoding: string
-  selectedQuoteOption: string
-  trimWhitespace: boolean
-}
-
-interface TxtFieldConfig {
-  name: string
-  startPosition: number
-  length: number
 }
 
 @Component({
