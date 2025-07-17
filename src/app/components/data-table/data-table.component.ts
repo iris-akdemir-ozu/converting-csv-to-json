@@ -12,6 +12,7 @@ export class DataTableComponent {
   @Input() searchTerm = ""
   @Input() hasHeader = true // New input to know if file has header
   @Input() showQuotes = false // New input to know if quotes should be visible
+  @Input() fileType: "csv" | "txt" | null = null // Input to know the file type
 
   // Limit display to first 10000 rows for performance
   private readonly MAX_DISPLAY_ROWS = 10000
@@ -52,5 +53,49 @@ export class DataTableComponent {
    */
   getFormattedJson(): string {
     return JSON.stringify(this.filteredData, null, 2)
+  }
+  /**
+   * Format cell value based on file type and options
+   * @param value The cell value to format
+   * @returns Formatted string value
+   */
+  formatCellValue(value: any): string {
+    if (value === null || value === undefined) {
+      return "-"
+    }
+
+    const stringValue = String(value)
+
+    // For CSV files, handle quote wrapping if needed
+    if (this.fileType === "csv" && this.showQuotes && stringValue.includes(",")) {
+      return `"${stringValue}"`
+    }
+
+    // For TXT files, just return the string value
+    return stringValue
+  }
+
+  /**
+   * Get file type display name
+   * @returns Capitalized file type name
+   */
+  get fileTypeDisplay(): string {
+    return this.fileType ? this.fileType.toUpperCase() : "Unknown"
+  }
+
+  /**
+   * Check if current file is CSV
+   * @returns True if file type is CSV
+   */
+  get isCsvFile(): boolean {
+    return this.fileType === "csv"
+  }
+
+  /**
+   * Check if current file is TXT
+   * @returns True if file type is TXT
+   */
+  get isTxtFile(): boolean {
+    return this.fileType === "txt"
   }
 }

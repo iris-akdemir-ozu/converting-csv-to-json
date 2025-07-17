@@ -21,7 +21,7 @@
         <!-- Your existing CSV uploader component -->
         <div class="card">
           <app-file-uploader 
-            (onConvert)="onCsvConverted($event)"
+            (onConvert)="onFileConverted($event)"
             (onError)="onConversionError($event)"
             (onFileClear)="onFileClear()"
             (onOptionsChange)="onOptionsChanged($event)">
@@ -51,7 +51,8 @@
             [headers]="tableHeaders"
             [searchTerm]="searchTerm"
             [hasHeader]="csvOptions.hasHeader"
-            [showQuotes]="!csvOptions.doubleQuoteWrap">
+            [showQuotes]="!csvOptions.doubleQuoteWrap"
+            [fileType]="currentFileType">
           </app-data-table>
         </div>
       </div>
