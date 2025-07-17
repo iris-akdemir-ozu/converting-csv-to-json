@@ -11,6 +11,31 @@
       (change)="onFileSelect($event)"
       [disabled]="isProcessing">
 
+  <!-- File Type Selection -->
+  <div *ngIf="selectedFile" class="file-type-selection">
+    <h4>Select File Type</h4>
+    <label>
+      <input
+        type="radio"
+        name="fileType"
+        value="csv"
+        [(ngModel)]="fileType"
+        [disabled]="isProcessing"
+      />
+      CSV
+    </label>
+    <label>
+      <input
+        type="radio"
+        name="fileType"
+        value="txt"
+        [(ngModel)]="fileType"
+        [disabled]="isProcessing"
+      />
+      TXT
+    </label>
+  </div>
+
     
   <!-- Options section - shown when file is selected -->
   <div *ngIf="selectedFile" class="options-section">

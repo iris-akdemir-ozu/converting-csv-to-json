@@ -111,44 +111,8 @@ export class FileUploaderComponent {
     if (files && files.length > 0) {
       const file = files[0]
       this.selectedFile = file
+      this.fileType = null;
 
-      // Detect file type
-      const extension = this.getFileExtension(file.name)
-      if (extension === "csv") {
-        this.fileType = "csv"
-      } else if (extension === "txt") {
-        this.fileType = "txt"
-      } else {
-        this.onError.emit("Unsupported file type. Please upload a .csv or .txt file.")
-        this.clearSelection()
-        return
-      }
-
-      this.isProcessing = true
-      try {
-        let jsonResult: any
-
-        if (this.fileType === "csv") {
-          jsonResult = await this.csvService.convertFileToJson(file, this.getOptions())
-        } else if (this.fileType === "txt") {
-          // For TXT files, read as text and use the TXT service
-          const text = await file.text()
-          const txtOptions: TxtToJsonOptions = this.getTxtOptions()
-          const result = this.txtService.convert(text, txtOptions)
-          jsonResult = {
-            properties: Object.keys(result[0] || {}),
-            result: result,
-          }
-        }
-
-        this.isProcessing = false
-        this.onConvert.emit(jsonResult)
-        this.onOptionsChange.emit(this.getOptions())
-      } catch (error) {
-        this.isProcessing = false
-        this.onError.emit("Error reading file: " + error)
-        this.clearSelection()
-      }
     }
   }
 
@@ -287,6 +251,10 @@ export class FileUploaderComponent {
       this.onError.emit("No file selected. Please select a file first.")
       return
     }
+    if (!this.fileType) {
+      this.onError.emit("Please select the file type.");
+      return;
+    }
 
     if (this.isProcessing) {
       return
@@ -302,8 +270,7 @@ export class FileUploaderComponent {
         jsonResult = await this.csvService.convertFileToJson(this.selectedFile, this.getOptions())
       } else if (this.fileType === "txt") {
         const text = await this.selectedFile.text()
-        const txtOptions: TxtToJsonOptions = this.getTxtOptions()
-        const result = this.txtService.convert(text, txtOptions)
+        const result = this.txtService.convert(text, this.getTxtOptions() )
         jsonResult = {
           properties: Object.keys(result[0] || {}),
           result: result,
@@ -321,7 +288,5 @@ export class FileUploaderComponent {
     }
   }
 
-  private getFileExtension(filename: string): string {
-    return filename.split(".").pop()?.toLowerCase() || ""
-  }
+  
 }
